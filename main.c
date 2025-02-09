@@ -1,78 +1,79 @@
 #include <gtk/gtk.h>
 
-static void on_file_selected(GObject *source, GAsyncResult *result, gpointer data) {
-  GtkFileDialog *dialog;
-  dialog = GTK_FILE_DIALOG(source);
-  GFile *file;
-  file = gtk_file_dialog_open_finish(dialog, result, NULL);
-  char *file_path;
-  file_path = g_file_get_path(file);
+static gchar *selected_file = NULL;
 
-  char *current_dir = g_get_current_dir();
-  g_print(file_path);
-
-  char *output_path = g_build_filename(current_dir, "audio.mp3", NULL);
-
-  if (g_file_test(file_path, G_FILE_TEST_EXISTS)){
-    g_print("file found : ", file_path);
-  } else {
-    g_print("file not found");
-  }
-
-  char *command[] = {
-    "D:\\ffmpeg\\bin\\ffmpeg.exe",
-    "-i", file_path,
-    "-vn",
-    "-acodec",
-    "libmp3lame",
-    "-ab", "192k",
-    output_path,
-    NULL
-  };
-
-  GError *error = NULL;
-  GPid child_pid;
-  gboolean success = g_spawn_async(NULL, command, NULL, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &child_pid, &error);
-
-  if (!success) {
-    g_print("Error: %s\n", error->message);
-  } else {
-    g_print("Convert Success");
-  }
-
-  g_free(file_path);
-  g_object_unref(file);
-} 
-
-static void choose_file(GtkWidget *widget, gpointer data) {
-  GtkFileDialog *dialog;
-  GListStore *filter_store;
-  GtkFileFilter *filter;
-
-  dialog = gtk_file_dialog_new();
-  filter_store = g_list_store_new(GTK_TYPE_FILE_FILTER);
-
-  if (!filter_store) {
-    g_print("Error: filter store error init");
+void convert_video_to_audio(const gchar *input_path) {
+  if (input_path == NULL) {
+    g_print("No File Selected");
     return;
   }
 
-  filter = gtk_file_filter_new();
-  gtk_file_filter_set_name(filter, "File Video");
-  gtk_file_filter_add_mime_type(filter, "video/mp4");
-  g_list_store_append(filter_store, filter);
-
-  if (g_list_model_get_n_items(G_LIST_MODEL(filter_store)) > 0) {
-    gtk_file_dialog_set_filters(dialog, G_LIST_MODEL(filter_store));
+  gchar *output_path = g_strdup_printf("%s.mp3", input_path);
+  gchar *command = g_strdup_printf("ffmpeg -y -i \"%s\" -b:a 128k -vn \"%s\"", input_path, output_path);
+  int status = system(command);
+  g_free(command);
+  if (status == -1) {
+    g_print("error: shell");
+  } else if (status >> 8) {
+    g_print("Error: ffmpeg eeror to running");
   } else {
-    g_print("Error: no filter in the array");
+    g_print("Success");
   }
-
-  gtk_file_dialog_open(dialog, GTK_WINDOW(data), NULL, on_file_selected, NULL);
 }
 
-static void convert(GtkApplication *app, gpointer user_data) {
-  g_print ("Test Convert");
+
+static void on_file_selected(GObject *source, GAsyncResult *result, gpointer data) {
+  GtkFileDialog *dialog = GTK_FILE_DIALOG(source);
+  GError *error = NULL;
+  
+  GFile *file = gtk_file_dialog_open_finish(dialog, result, &error);
+
+  if (error) {
+    g_printerr("Error: %s\n", error->message);
+    g_error_free(error);
+    return;
+  }
+
+  if (file) {
+    if (selected_file) {
+      g_free(selected_file);
+    }
+
+    selected_file = g_file_get_path(file);
+    g_print("File selected : %s\n", selected_file);
+    g_object_unref(file);
+  }
+} 
+
+static void choose_file(GtkButton *button, gpointer data) {
+  GtkWindow *parent_window = GTK_WINDOW(data);
+  GtkFileDialog *dialog = gtk_file_dialog_new();
+  GtkFileFilter *filter = gtk_file_filter_new();
+
+  gtk_file_filter_set_name(filter, "File Video");
+
+  gtk_file_filter_add_mime_type(filter, "video/mp4");
+  gtk_file_filter_add_mime_type(filter, "video/x-matroska");
+  gtk_file_filter_add_mime_type(filter, "video/x-msvideo");
+
+  GListStore *filters = g_list_store_new(GTK_TYPE_FILE_FILTER);
+  g_list_store_append(filters, filter);
+  gtk_file_dialog_set_filters(dialog, G_LIST_MODEL(filters));
+
+  gtk_file_dialog_open(dialog, GTK_WINDOW(data), NULL, on_file_selected, NULL);
+
+  g_object_unref(filter);
+  g_object_unref(filters);
+}
+
+static void convert(GtkButton *button, gpointer data) {
+  if (selected_file) {
+    convert_video_to_audio(selected_file);
+    g_free(selected_file);
+    selected_file = NULL;
+  } else {
+    g_print("Please select file!");
+  }
 }
 
 static void activate (GtkApplication *app, gpointer user_data) {
