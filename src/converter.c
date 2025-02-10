@@ -2,16 +2,24 @@
 
 gchar *selected_file = NULL;  // Definition of the global variable selected_file
 
-void convert_video_to_audio(const gchar *input_path) {
+void convert_video_to_audio(const gchar *input_path, const gchar *format) {
   if (input_path == NULL) {
     g_print("No File Selected\n");
     return;
   }
 
-  gchar *output_path = g_strdup_printf("%s.mp3", input_path);
-  gchar *command = g_strdup_printf("ffmpeg -y -i \"%s\" -b:a 128k -vn \"%s\"", input_path, output_path);
+  gchar *output_path = g_strdup_printf("%s.%s", input_path, format);
+  gchar *command;
+
+  if (g_strcmp0(format, "pcm") == 0) {
+    command = g_strdup_printf("ffmpeg -y -i \"%s\" -f s16le -acodec pcm_s16le \"%s\"", input_path, output_path);
+  } else {
+    command = g_strdup_printf("ffmpeg -y -i \"%s\" -b:a 128k -vn \"%s\"", input_path, output_path);
+  }
+  
   int status = system(command);
   g_free(command);
+  
   if (status != 0) {
     g_print("Error: ffmpeg error during execution\n");
   } else {
@@ -70,18 +78,21 @@ void choose_file(GtkButton *button, gpointer data) {
 }
 
 void convert(GtkButton *button, gpointer data) {
-  GtkWidget *dropdown = GTK_WIDGET(data);
-
   GtkDropDown *drop_down = GTK_DROP_DOWN(data);
 
   gint selected_index = gtk_drop_down_get_selected(drop_down);
-  // Mendapatkan format dari list
-  const char *formats[] = {"MP3", "WAV", "FLAC"};
+  const char *formats[] = {"mp3", "wav", "aac", "flac", "ogg", "opus", "wma", "m4a", "caf", "aiff", "aif", "pcm", "spx"};
+
+  if (selected_index < 0 || selected_index >= 13) {
+    g_print("Invalid format selection\n");
+    return;
+  }
+
   const char *selected_format = formats[selected_index];
-  g_print("Selected index: %s\n", selected_format);
-  
+  g_print("Selected format: %s\n", selected_format);
+
   if (selected_file) {
-    convert_video_to_audio(selected_file);
+    convert_video_to_audio(selected_file, selected_format);
     g_free(selected_file);
     selected_file = NULL;
   } else {
