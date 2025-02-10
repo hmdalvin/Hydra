@@ -1,2 +1,10 @@
+/build/
+/test/
+
 build.txt
 main.exe
+test/a.c
+test/b.c
+test/c.c
+test/d.c
+program.exe

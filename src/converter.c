@@ -54,7 +54,10 @@ void choose_file(GtkButton *button, gpointer data) {
   gtk_file_filter_add_mime_type(filter, "video/mp4");
   gtk_file_filter_add_mime_type(filter, "video/x-matroska");
   gtk_file_filter_add_mime_type(filter, "video/x-msvideo");
-  gtk_file_filter_add_mime_type(filter, "video/quicktime"); gtk_file_filter_add_mime_type(filter, "video/webm");gtk_file_filter_add_mime_type(filter, "video/x-flv");gtk_file_filter_add_mime_type(filter, "video/mpeg");gtk_file_filter_add_mime_type(filter, "video/ogg");
+  gtk_file_filter_add_mime_type(filter, "video/quicktime");
+  gtk_file_filter_add_mime_type(filter, "video/webm");
+  gtk_file_filter_add_mime_type(filter, "video/x-flv");
+  gtk_file_filter_add_mime_type(filter, "video/mpeg");gtk_file_filter_add_mime_type(filter, "video/ogg");
 
   GListStore *filters = g_list_store_new(GTK_TYPE_FILE_FILTER);
   g_list_store_append(filters, filter);
@@ -67,6 +70,16 @@ void choose_file(GtkButton *button, gpointer data) {
 }
 
 void convert(GtkButton *button, gpointer data) {
+  GtkWidget *dropdown = GTK_WIDGET(data);
+
+  GtkDropDown *drop_down = GTK_DROP_DOWN(data);
+
+  gint selected_index = gtk_drop_down_get_selected(drop_down);
+  // Mendapatkan format dari list
+  const char *formats[] = {"MP3", "WAV", "FLAC"};
+  const char *selected_format = formats[selected_index];
+  g_print("Selected index: %s\n", selected_format);
+  
   if (selected_file) {
     convert_video_to_audio(selected_file);
     g_free(selected_file);
