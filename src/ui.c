@@ -15,13 +15,10 @@ void activate(GtkApplication *app, gpointer user_data) {
   GtkWidget *file_choose_button = gtk_button_new_with_label("Select File");
   g_signal_connect(file_choose_button, "clicked", G_CALLBACK(choose_file), window);
 
-  // Membuat GtkStringList dengan format yang benar
-  const char *formats[] = {"MP3", "WAV", "AAC", "FLAC", NULL}; // Harus diakhiri dengan NULL
+  const char *formats[] = {"MP3", "WAV", "AAC", "FLAC", "OGG", "OPUS", "WMA", "M4A", "CAF", "AIFF", "PCM", "SPX", NULL};
   GtkStringList *format_list = gtk_string_list_new(formats);
 
-  // GtkDropDown sebagai dropdown baru
   GtkWidget *dropdown_output_file_type = gtk_drop_down_new(G_LIST_MODEL(format_list), NULL);
-
 
   GtkWidget *convert_button = gtk_button_new_with_label("Convert");
   g_signal_connect(convert_button, "clicked", G_CALLBACK(convert), dropdown_output_file_type);

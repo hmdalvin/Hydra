@@ -1,10 +1,9 @@
 /build/
 /test/
+/CMakeFiles/
 
-build.txt
-main.exe
-test/a.c
-test/b.c
-test/c.c
-test/d.c
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+
 program.exe
